@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 96" role="img" aria-label="Pop Series">
+  <defs>
+    <clipPath id="ring-coral"><circle cx="48" cy="48" r="38"/></clipPath>
+    <clipPath id="ring-teal"><circle cx="110" cy="48" r="38"/></clipPath>
+    <clipPath id="ring-yellow"><circle cx="172" cy="48" r="38"/></clipPath>
+  </defs>
+  <g>
+    <circle cx="48" cy="48" r="38" fill="#F2A48C"/>
+    <g clip-path="url(#ring-coral)">
+      <circle cx="48" cy="48" r="29" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+      <circle cx="48" cy="48" r="20" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+      <circle cx="48" cy="48" r="11" fill="#FFFFFF"/>
+    </g>
+    <circle cx="110" cy="48" r="38" fill="#7DB7AA"/>
+    <g clip-path="url(#ring-teal)">
+      <circle cx="110" cy="48" r="29" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+      <circle cx="110" cy="48" r="20" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+      <circle cx="110" cy="48" r="11" fill="#FFFFFF"/>
+    </g>
+    <circle cx="172" cy="48" r="38" fill="#F1D182"/>
+    <g clip-path="url(#ring-yellow)">
+      <circle cx="172" cy="48" r="29" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+      <circle cx="172" cy="48" r="20" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+      <circle cx="172" cy="48" r="11" fill="#FFFFFF"/>
+    </g>
+  </g>
+  <g font-family="'Kanit', 'Plus Jakarta Sans', system-ui, sans-serif" font-weight="800" fill="#2B2F3A" font-size="34" text-anchor="middle">
+    <text x="48" y="60">P</text>
+    <text x="110" y="60">O</text>
+    <text x="172" y="60">P</text>
+  </g>
+</svg>

@@ -1,0 +1,432 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette — pulled from the Pop logo */
+  --color-coral-50: #fdf2ed;
+  --color-coral-100: #fbe1d5;
+  --color-coral-200: #f7c4ad;
+  --color-coral-300: #f2a48c;
+  --color-coral-400: #ec8467;
+  --color-coral-500: #d96444;
+
+  --color-teal-50: #effaf6;
+  --color-teal-100: #d2efe5;
+  --color-teal-200: #a8dfcd;
+  --color-teal-300: #7db7aa;
+  --color-teal-400: #4f968a;
+  --color-teal-500: #2f7368;
+
+  --color-butter-50: #fdf9eb;
+  --color-butter-100: #fbf0c8;
+  --color-butter-200: #f6e2a0;
+  --color-butter-300: #f1d182;
+  --color-butter-400: #e6b657;
+  --color-butter-500: #c4942e;
+
+  --color-ink-900: #1a1f36;
+  --color-ink-700: #2b2f3a;
+  --color-ink-500: #545a6b;
+  --color-ink-300: #9aa0b1;
+  --color-ink-100: #e7e8ee;
+
+  --color-cream: #fbf6ee;
+  --color-paper: #ffffff;
+
+  --color-background: var(--color-cream);
+  --color-foreground: var(--color-ink-900);
+
+  --font-display: "aktiv-grotesk-thai", "Aktiv Grotesk Thai", "Google Sans",
+    system-ui, sans-serif;
+  --font-sans: "Google Sans", "aktiv-grotesk-thai", "Helvetica Neue",
+    system-ui, sans-serif;
+
+  --shadow-pop: 0 24px 48px -24px rgba(26, 31, 54, 0.18),
+    0 6px 18px -10px rgba(26, 31, 54, 0.08);
+}
+
+@layer base {
+  :root {
+    --font-scale: 1;
+  }
+  html {
+    background: var(--color-cream);
+    color: var(--color-ink-900);
+    font-size: calc(16px * var(--font-scale));
+  }
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01" on, "cv11" on;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: var(--color-coral-200);
+    color: var(--color-ink-900);
+  }
+}
+
+@layer components {
+  .container-pop {
+    width: 100%;
+    max-width: 1360px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .container-pop { padding-inline: 2.5rem; }
+  }
+  @media (min-width: 1280px) {
+    .container-pop { padding-inline: 3rem; }
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .prose-pop {
+    color: var(--color-ink-700);
+    line-height: 1.8;
+    font-size: 1.05rem;
+  }
+  .prose-pop p { margin-block: 1.1em; }
+  .prose-pop h2 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.35;
+    margin-top: 2.2rem;
+    margin-bottom: 0.8rem;
+    color: var(--color-ink-900);
+  }
+  .prose-pop h3 {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 1.6rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-ink-900);
+  }
+  .prose-pop h4,
+  .prose-pop h5 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--color-ink-900);
+    margin-top: 1.4rem;
+    margin-bottom: 0.4rem;
+  }
+  .prose-pop a {
+    color: var(--color-teal-400);
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+  }
+  .prose-pop ul {
+    list-style: disc;
+    padding-left: 1.4rem;
+    margin-block: 1rem;
+  }
+  .prose-pop ul li { margin-block: 0.4rem; }
+  .prose-pop img {
+    border-radius: 1.25rem;
+    margin-block: 1.4rem;
+    width: 100%;
+    height: auto;
+  }
+  .prose-pop figure { margin-block: 1.4rem; }
+  .prose-pop blockquote {
+    position: relative;
+    margin-block: 2.2rem;
+    padding: 2rem 1.75rem 1.75rem;
+    border: none;
+    border-radius: 1.5rem;
+    background: linear-gradient(135deg, var(--color-coral-50) 0%, var(--color-butter-50) 100%);
+    color: var(--color-ink-900);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.25rem;
+    line-height: 1.55;
+    font-style: normal;
+    text-wrap: balance;
+    box-shadow: 0 12px 32px -16px rgba(242, 164, 140, 0.35);
+  }
+  .prose-pop blockquote::before {
+    content: "“";
+    position: absolute;
+    top: -0.4rem;
+    left: 1.25rem;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 5rem;
+    line-height: 1;
+    color: var(--color-coral-300);
+    opacity: 0.85;
+    pointer-events: none;
+  }
+  .prose-pop blockquote::after {
+    content: "";
+    position: absolute;
+    left: 1.75rem;
+    right: 1.75rem;
+    bottom: 1.15rem;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--color-coral-300),
+      var(--color-butter-300),
+      transparent
+    );
+    border-radius: 999px;
+  }
+  .prose-pop blockquote p {
+    margin: 0;
+  }
+  .prose-pop blockquote p + p {
+    margin-top: 0.8rem;
+  }
+  .prose-pop blockquote cite {
+    display: block;
+    margin-top: 1.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-style: normal;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-coral-500);
+  }
+  .prose-pop blockquote cite::before {
+    content: "— ";
+  }
+  @media (min-width: 768px) {
+    .prose-pop blockquote {
+      padding: 2.5rem 2.25rem 2rem;
+      font-size: 1.45rem;
+    }
+    .prose-pop blockquote::before {
+      font-size: 6.5rem;
+      top: -0.6rem;
+      left: 1.5rem;
+    }
+  }
+  .prose-pop-drop > p:first-of-type::first-letter,
+  .prose-pop-drop > div:first-of-type > p:first-of-type::first-letter {
+    float: left;
+    font-family: var(--font-display);
+    font-size: 3.4rem;
+    line-height: 0.9;
+    font-weight: 800;
+    color: var(--color-coral-500);
+    padding: 0.3rem 0.7rem 0 0;
+    margin-top: 0.15rem;
+  }
+  .prose-pop iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 1rem;
+    margin-block: 1.4rem;
+  }
+  .prose-pop > * {
+    max-width: 100%;
+  }
+  .prose-pop .wp-block-embed,
+  .prose-pop .wp-block-embed-wrapper,
+  .prose-pop .wp-block-embed__wrapper {
+    width: 100%;
+    margin-block: 1.4rem;
+  }
+  .prose-pop .wp-block-embed iframe,
+  .prose-pop .wp-block-embed-youtube iframe,
+  .prose-pop .wp-block-embed-vimeo iframe,
+  .prose-pop .wp-block-embed-twitter iframe,
+  .prose-pop .wp-block-embed-tiktok iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    border-radius: 1rem;
+    margin: 0;
+  }
+  /* Facebook iframes don't fit 16:9; let them set their own height */
+  .prose-pop .fb-post,
+  .prose-pop .fb-video,
+  .prose-pop .fb_iframe_widget,
+  .prose-pop .fb_iframe_widget > span,
+  .prose-pop .fb_iframe_widget iframe {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .prose-pop .fb-post iframe,
+  .prose-pop .fb-video iframe {
+    aspect-ratio: auto;
+    height: auto;
+  }
+  /* Twitter / X */
+  .prose-pop .twitter-tweet,
+  .prose-pop blockquote.twitter-tweet {
+    max-width: 100% !important;
+    margin-inline: auto;
+  }
+  /* Instagram */
+  .prose-pop .instagram-media {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+  }
+  /* TikTok */
+  .prose-pop .tiktok-embed {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  /* Wide tables */
+  .prose-pop .wp-block-table,
+  .prose-pop table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  .grid-noise {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(26, 31, 54, 0.06) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .gradient-mesh {
+    background:
+      radial-gradient(at 12% 18%, rgba(242, 164, 140, 0.55), transparent 55%),
+      radial-gradient(at 88% 8%, rgba(241, 209, 130, 0.55), transparent 55%),
+      radial-gradient(at 70% 92%, rgba(125, 183, 170, 0.55), transparent 55%),
+      var(--color-cream);
+  }
+}
+
+/* When the page declares it doesn't want a gap before the footer (eg. 404) */
+body:has([data-no-footer-gap]) footer {
+  margin-top: 0;
+}
+
+/* ---- Skeleton (Facebook-style shimmer) ---- */
+@keyframes pop-skeleton-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    100deg,
+    var(--color-ink-100) 30%,
+    rgba(231, 232, 238, 0.4) 50%,
+    var(--color-ink-100) 70%
+  );
+  background-size: 200% 100%;
+  border-radius: 0.75rem;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.7) 50%,
+    transparent 100%
+  );
+  animation: pop-skeleton-sweep 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
+/* ---- Motion ---- */
+@keyframes pop-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-14px) scale(1.04); }
+}
+@keyframes pop-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes pop-spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes pop-shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+.circle-bounce {
+  display: inline-block;
+  animation: pop-bounce 2.4s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+.float-slow {
+  animation: pop-float 4s ease-in-out infinite;
+}
+
+/* ---- Hover lift utilities ---- */
+.lift-hover {
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 280ms ease;
+  will-change: transform;
+}
+.lift-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-pop);
+}
+
+/* Animated underline for inline links */
+.link-underline {
+  position: relative;
+  display: inline-block;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 2px;
+  background: var(--color-coral-300);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Article inline anchors inside prose get the same treatment */
+.prose-pop a {
+  transition: color 200ms ease;
+}
+.prose-pop a:hover {
+  color: var(--color-coral-500);
+}
+
+/* Card image zoom (used by ArticleCard variants) */
+@media (prefers-reduced-motion: reduce) {
+  .circle-bounce,
+  .float-slow {
+    animation: none;
+  }
+  .lift-hover {
+    transition: none;
+  }
+}
