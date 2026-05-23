@@ -122,7 +122,7 @@ export function ArticleSkeleton() {
         </div>
       </header>
       <section className="container-pop mt-12">
-        <div className="lg:grid lg:grid-cols-[64px_minmax(0,1fr)_280px] lg:gap-12 xl:gap-16">
+        <div className="lg:grid lg:grid-cols-[64px_minmax(0,1fr)_340px] lg:gap-10 xl:grid-cols-[64px_minmax(0,1fr)_360px] xl:gap-14">
           <div className="hidden lg:block space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-11 w-11 rounded-full" />

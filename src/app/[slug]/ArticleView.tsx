@@ -5,7 +5,11 @@ import { FloatingShareBar } from "@/components/FloatingShareBar";
 import { ReadingProgress } from "@/components/ReadingProgress";
 import { ReviewDetails } from "@/components/ReviewDetails";
 import { ShareBar } from "@/components/ShareBar";
-import { getPosts, type NormalizedPost } from "@/lib/api";
+import {
+  getMostViewedPosts,
+  getPosts,
+  type NormalizedPost,
+} from "@/lib/api";
 import { ACCENT_STYLES } from "@/lib/categories";
 
 const dateFmt = new Intl.DateTimeFormat("th-TH", {
@@ -23,15 +27,18 @@ function estimateReadingTime(html: string) {
 }
 
 export async function ArticleView({ post }: { post: NormalizedPost }) {
-  const related = post.category
-    ? (
-        await getPosts({
+  const [related, mostViewed] = await Promise.all([
+    post.category
+      ? getPosts({
           perPage: 4,
           categoryId: post.category.id,
           exclude: [post.id],
-        })
-      ).slice(0, 3)
-    : [];
+        }).then((p) => p.slice(0, 3))
+      : Promise.resolve([] as NormalizedPost[]),
+    getMostViewedPosts({ limit: 6, exclude: [post.id] }).then((p) =>
+      p.slice(0, 5),
+    ),
+  ]);
 
   const accent = post.category
     ? ACCENT_STYLES[post.category.accent]
@@ -169,7 +176,7 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
 
       {/* Body */}
       <section className="container-pop mt-12">
-        <div className="relative lg:grid lg:grid-cols-[64px_minmax(0,1fr)_280px] lg:gap-12 xl:gap-16">
+        <div className="relative lg:grid lg:grid-cols-[64px_minmax(0,1fr)_340px] lg:gap-10 xl:grid-cols-[64px_minmax(0,1fr)_360px] xl:gap-14">
           {/* Floating share rail */}
           <aside className="hidden lg:block">
             <div className="sticky top-28">
@@ -217,6 +224,56 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
           {/* Sticky TOC / meta */}
           <aside className="hidden lg:block">
             <div className="sticky top-28 space-y-6">
+              {mostViewed.length > 0 && (
+                <div className="rounded-2xl border border-ink-100/70 bg-paper p-5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold uppercase tracking-widest text-ink-300">
+                      อ่านมากที่สุด
+                    </h4>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-coral-500">
+                      Most viewed
+                    </span>
+                  </div>
+                  <ol className="mt-4 space-y-4">
+                    {mostViewed.map((p, i) => (
+                      <li key={p.id} className="group flex items-start gap-3">
+                        <span className="shrink-0 w-6 text-xl font-extrabold leading-none text-coral-200 group-hover:text-coral-500 transition-colors">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <Link
+                          href={`/${p.slug}`}
+                          className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-ink-100"
+                        >
+                          {p.image ? (
+                            <Image
+                              src={p.image.url}
+                              alt={p.image.alt || p.title}
+                              fill
+                              sizes="64px"
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <span className="absolute inset-0 gradient-mesh" />
+                          )}
+                        </Link>
+                        <div className="min-w-0 flex-1">
+                          {p.category && (
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-ink-300">
+                              {p.category.label}
+                            </span>
+                          )}
+                          <Link
+                            href={`/${p.slug}`}
+                            className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-ink-900 group-hover:text-coral-500 transition-colors"
+                          >
+                            {p.title}
+                          </Link>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
               <div className="rounded-2xl border border-ink-100/70 bg-paper p-5">
                 <h4 className="text-xs font-semibold uppercase tracking-widest text-ink-300">
                   ในบทความนี้
@@ -242,25 +299,6 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
                   </div>
                 </dl>
               </div>
-              {post.tags.length > 0 && (
-                <div className="rounded-2xl border border-ink-100/70 bg-paper p-5">
-                  <h4 className="text-xs font-semibold uppercase tracking-widest text-ink-300">
-                    Tags
-                  </h4>
-                  <ul className="mt-3 flex flex-wrap gap-1.5">
-                    {post.tags.slice(0, 8).map((t) => (
-                      <li key={t.id}>
-                        <Link
-                          href={`/tag/${t.slug}`}
-                          className="inline-flex rounded-full bg-cream px-2.5 py-1 text-xs text-ink-700 hover:bg-coral-100 hover:text-coral-500 transition-colors"
-                        >
-                          #{t.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
           </aside>
         </div>

@@ -1,6 +1,7 @@
 import { CATEGORY_BY_ID, type CategoryMeta } from "./categories";
 
 const API_BASE = "https://www.popseries.co/wp-json/wp/v2";
+const WPP_BASE = "https://www.popseries.co/wp-json/wordpress-popular-posts/v1";
 const REVALIDATE_SECONDS = 60 * 10;
 
 type WPRendered = { rendered: string };
@@ -274,6 +275,31 @@ export async function getPopularTags(limit = 18): Promise<PopularTag[]> {
     slug: t.slug,
     count: t.count,
   }));
+}
+
+type WppRange = "last24hours" | "last7days" | "last30days" | "all";
+
+export async function getMostViewedPosts(
+  opts: { limit?: number; exclude?: number[]; range?: WppRange } = {},
+): Promise<NormalizedPost[]> {
+  const { limit = 5, exclude, range = "last7days" } = opts;
+  const q = buildQuery({
+    limit,
+    range,
+    _embed: 1,
+    exclude: exclude?.join(","),
+  });
+  try {
+    const res = await fetch(`${WPP_BASE}/popular-posts?${q}`, {
+      next: { revalidate: REVALIDATE_SECONDS },
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return [];
+    const posts = (await res.json()) as WPPost[];
+    return posts.map(normalizePost);
+  } catch {
+    return [];
+  }
 }
 
 export async function getPostBySlug(slug: string): Promise<NormalizedPost | null> {
