@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { NormalizedPost } from "@/lib/api";
-import { SectionHeader } from "./SectionHeader";
 
 type Props = { posts: NormalizedPost[] };
 
@@ -27,12 +26,6 @@ function PlayBadge({ size = 56 }: { size?: number }) {
       </span>
     </span>
   );
-}
-
-function formatDuration(i: number) {
-  const minutes = 3 + ((i * 7) % 12);
-  const seconds = (i * 17) % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 export function VideoSection({ posts }: Props) {
@@ -88,28 +81,25 @@ export function VideoSection({ posts }: Props) {
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-2 lg:items-stretch">
-          {/* Hero video */}
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-stretch">
+          {/* Hero video — true 16:9, drives the row height */}
           <Link
             href={`/${hero.slug}`}
             className="group relative block overflow-hidden rounded-[2rem]"
           >
-            <div className="relative aspect-[16/10] bg-ink-700">
+            <div className="relative aspect-video bg-ink-700">
               {hero.image && (
                 <Image
                   src={hero.image.url}
                   alt={hero.image.alt || hero.title}
                   fill
-                  sizes="(min-width: 1024px) 760px, 100vw"
+                  quality={90}
+                  sizes="(min-width: 1024px) 780px, 100vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                 />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/20 to-ink-900/30" />
               <PlayBadge size={84} />
-              <span className="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-ink-900/70 px-3 py-1 text-xs font-semibold text-cream backdrop-blur">
-                <span className="h-1.5 w-1.5 rounded-full bg-coral-300 animate-pulse" />
-                Featured · {formatDuration(0)}
-              </span>
               <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
                 <h3 className="line-clamp-2 text-balance text-2xl font-extrabold leading-snug text-cream md:text-3xl">
                   {hero.title}
@@ -121,45 +111,44 @@ export function VideoSection({ posts }: Props) {
             </div>
           </Link>
 
-          {/* Side video list */}
-          <ul className="flex flex-col gap-3">
-            {rest.map((p, i) => (
-              <li key={p.id}>
-                <Link
-                  href={`/${p.slug}`}
-                  className="group flex items-stretch gap-3 overflow-hidden rounded-2xl bg-cream/5 hover:bg-cream/10 transition-colors"
-                >
-                  <div className="relative aspect-video w-32 sm:w-36 shrink-0 overflow-hidden bg-ink-700">
-                    {p.image && (
-                      <Image
-                        src={p.image.url}
-                        alt={p.image.alt || p.title}
-                        fill
-                        sizes="144px"
-                        className="object-cover opacity-90 transition-transform duration-500 group-hover:scale-110"
-                      />
-                    )}
-                    <PlayBadge size={32} />
-                    <span className="absolute bottom-1 right-1 rounded-md bg-ink-900/80 px-1.5 py-0.5 text-[10px] font-semibold text-cream">
-                      {formatDuration(i + 1)}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1 py-2 pr-3">
-                    <h4 className="line-clamp-2 text-sm font-semibold leading-snug text-cream group-hover:text-coral-300">
-                      {p.title}
-                    </h4>
-                    <p className="mt-1 text-xs text-cream/50">
-                      {new Intl.DateTimeFormat("th-TH", {
-                        day: "numeric",
-                        month: "short",
-                      }).format(new Date(p.date))}{" "}
-                      · {((p.id % 90) + 12)}K views
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {/* Side video list — fills the hero height, split evenly */}
+          <div className="lg:relative">
+            <ul className="flex flex-col gap-3 lg:absolute lg:inset-0">
+              {rest.map((p) => (
+                <li key={p.id} className="lg:flex-1 lg:min-h-0">
+                  <Link
+                    href={`/${p.slug}`}
+                    className="group flex h-full items-stretch gap-3 overflow-hidden rounded-2xl bg-cream/5 hover:bg-cream/10 transition-colors"
+                  >
+                    <div className="relative aspect-video w-32 shrink-0 overflow-hidden bg-ink-700 sm:w-36 lg:h-full lg:w-auto">
+                      {p.image && (
+                        <Image
+                          src={p.image.url}
+                          alt={p.image.alt || p.title}
+                          fill
+                          sizes="(min-width: 1024px) 200px, 144px"
+                          className="object-cover opacity-90 transition-transform duration-500 group-hover:scale-110"
+                        />
+                      )}
+                      <PlayBadge size={32} />
+                    </div>
+                    <div className="min-w-0 flex-1 py-2 pr-3">
+                      <h4 className="line-clamp-2 text-sm font-semibold leading-snug text-cream group-hover:text-coral-300">
+                        {p.title}
+                      </h4>
+                      <p className="mt-1 text-xs text-cream/50">
+                        {new Intl.DateTimeFormat("th-TH", {
+                          day: "numeric",
+                          month: "short",
+                        }).format(new Date(p.date))}{" "}
+                        · {((p.id % 90) + 12)}K views
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </section>

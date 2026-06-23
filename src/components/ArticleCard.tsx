@@ -32,9 +32,15 @@ type Props = {
   post: NormalizedPost;
   variant?: Variant;
   priority?: boolean;
+  showAuthor?: boolean;
 };
 
-export function ArticleCard({ post, variant = "default", priority }: Props) {
+export function ArticleCard({
+  post,
+  variant = "default",
+  priority,
+  showAuthor = true,
+}: Props) {
   const cat = post.category;
   const accent = cat ? ACCENT_STYLES[cat.accent] : ACCENT_STYLES.coral;
   const href = `/${post.slug}`;
@@ -353,8 +359,12 @@ export function ArticleCard({ post, variant = "default", priority }: Props) {
         </p>
         <div className="mt-4 flex items-center gap-3 text-xs font-medium text-ink-300">
           <span>{formatDate(post.date)}</span>
-          <span className="h-1 w-1 rounded-full bg-ink-300" />
-          <span>โดย {post.authorName}</span>
+          {showAuthor && (
+            <>
+              <span className="h-1 w-1 rounded-full bg-ink-300" />
+              <span>โดย {post.authorName}</span>
+            </>
+          )}
         </div>
       </div>
     </Link>

@@ -420,8 +420,86 @@ function ReviewLayout({
 }
 
 /* ------------------------------------------------------------------ */
-/* Scoop — tabloid bento mosaic of overlay cards                        */
+/* Scoop — gossip pinboard: clear-image scrapbook clippings             */
 /* ------------------------------------------------------------------ */
+
+const CLIP_ROTATIONS = [
+  "-rotate-[1.4deg]",
+  "rotate-[1.1deg]",
+  "-rotate-[0.7deg]",
+  "rotate-[1.5deg]",
+  "-rotate-[1.2deg]",
+  "rotate-[0.6deg]",
+];
+
+const CLIP_TAPE = ["bg-butter-200/70", "bg-coral-200/70", "bg-teal-200/60"];
+
+/** Scrapbook clipping — full, clear image with a paper caption below. */
+function ScoopClip({
+  post,
+  index,
+  number,
+  aspect = "aspect-[4/3]",
+}: {
+  post: NormalizedPost;
+  index: number;
+  number?: number;
+  aspect?: string;
+}) {
+  const rot = CLIP_ROTATIONS[index % CLIP_ROTATIONS.length];
+  const tape = CLIP_TAPE[index % CLIP_TAPE.length];
+
+  return (
+    <Link
+      href={`/${post.slug}`}
+      className={`group relative block rounded-[1.25rem] bg-paper p-2.5 shadow-pop ring-1 ring-ink-100/70 transition-transform duration-300 ${rot} hover:rotate-0 hover:-translate-y-1`}
+    >
+      {/* Tape strip */}
+      <span
+        aria-hidden
+        className={`absolute -top-2.5 left-1/2 h-5 w-24 -translate-x-1/2 -rotate-3 rounded-[3px] ${tape} shadow-sm`}
+      />
+
+      {/* Clear, full image — no dark overlay */}
+      <div className={`relative ${aspect} overflow-hidden rounded-[0.85rem] bg-ink-100`}>
+        {post.image ? (
+          <Image
+            src={post.image.url}
+            alt={post.image.alt || post.title}
+            fill
+            sizes="(min-width: 1024px) 460px, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div className="absolute inset-0 gradient-mesh" />
+        )}
+        {typeof number === "number" && (
+          <span className="absolute left-2.5 top-2.5 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-coral-500 px-2 text-sm font-extrabold text-cream tabular-nums shadow-pop">
+            {String(number).padStart(2, "0")}
+          </span>
+        )}
+      </div>
+
+      {/* Caption */}
+      <div className="px-1.5 pb-1 pt-3">
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-butter-500">
+          <span className="h-1.5 w-1.5 rounded-full bg-coral-300" />
+          Scoop
+          <span className="text-ink-300">·</span>
+          <span className="text-ink-300 normal-case tracking-normal">
+            {fullDateFmt.format(new Date(post.date))}
+          </span>
+        </div>
+        <h3 className="mt-2 line-clamp-2 text-balance text-base font-extrabold leading-snug text-ink-900 group-hover:text-coral-500 md:text-lg">
+          {post.title}
+        </h3>
+        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-ink-500">
+          {post.excerpt}
+        </p>
+      </div>
+    </Link>
+  );
+}
 
 function ScoopLayout({
   hero,
@@ -430,9 +508,8 @@ function ScoopLayout({
   hero: NormalizedPost | null;
   posts: NormalizedPost[];
 }) {
-  const bento = posts.slice(0, 5);
-  const remaining = posts.slice(5);
-  const [b0, b1, b2, b3, b4] = bento;
+  const featured = posts.slice(0, 3);
+  const wall = posts.slice(3);
 
   return (
     <>
@@ -442,55 +519,32 @@ function ScoopLayout({
         </div>
       )}
 
-      {bento.length > 0 && (
+      {featured.length > 0 && (
         <div className="mb-16">
           <SectionLabel
-            eyebrow="Inside"
-            title="เบื้องหลังที่คุณไม่เคยรู้"
-            meta="Bento mosaic"
+            eyebrow="Hot exclusives"
+            title="เม้าท์ร้อนประจำสัปดาห์"
+            meta="อ่านก่อนใคร"
             accent="butter"
           />
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2 lg:auto-rows-fr">
-            {b0 && (
-              <div className="lg:col-span-2 lg:row-span-2">
-                <ArticleCard post={b0} variant="overlay" />
-              </div>
-            )}
-            {b1 && (
-              <div>
-                <ArticleCard post={b1} variant="overlay-sm" />
-              </div>
-            )}
-            {b2 && (
-              <div>
-                <ArticleCard post={b2} variant="overlay-sm" />
-              </div>
-            )}
-            {b3 && (
-              <div>
-                <ArticleCard post={b3} variant="overlay-sm" />
-              </div>
-            )}
-            {b4 && (
-              <div>
-                <ArticleCard post={b4} variant="overlay-sm" />
-              </div>
-            )}
+          <div className="mt-8 grid gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((p, i) => (
+              <ScoopClip key={p.id} post={p} index={i} number={i + 1} />
+            ))}
           </div>
         </div>
       )}
 
-      {remaining.length > 0 && (
+      {wall.length > 0 && (
         <div>
           <SectionLabel
-            eyebrow="More gossip"
-            title="สกู๊ปอื่นๆ"
-            meta={`${remaining.length} เรื่อง`}
+            eyebrow="Scoop wall"
+            title="สกู๊ปทั้งหมด"
             accent="coral"
           />
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {remaining.map((p) => (
-              <ArticleCard key={p.id} post={p} variant="overlay" />
+          <div className="mt-8 grid gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+            {wall.map((p, i) => (
+              <ScoopClip key={p.id} post={p} index={i + 3} />
             ))}
           </div>
         </div>
@@ -656,8 +710,8 @@ function StarLayout({
   hero: NormalizedPost | null;
   posts: NormalizedPost[];
 }) {
-  const supporting = posts.slice(0, 4);
-  const remaining = posts.slice(4);
+  const supporting = posts.slice(0, 8);
+  const remaining = posts.slice(8);
 
   return (
     <>

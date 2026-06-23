@@ -10,8 +10,9 @@ export const DEFAULT_FIRST_PAGE_TOTAL = 19; // 1 hero + 18 grid
 const FIRST_PAGE_OVERRIDES: Partial<Record<CategoryMeta["key"], number>> = {
   movies: 20, // 1 hero + 4 side rail + 15 poster grid
   review: 20, // 1 hero + 4 featured + 15 quick takes
-  scoop: 18, // 1 hero + 5 bento + 12 grid
+  scoop: 19, // 1 hero + 3 featured + 15 wall
   series: 20, // 1 hero + 5 streaming + 8 top picks + 6 browse
+  star: 19, // 1 hero + 8 icons + 10 all stars
 };
 
 function firstPageTotalFor(cat: CategoryMeta) {
@@ -45,10 +46,17 @@ export async function loadCategoryPage(
   const firstPageTotal = firstPageTotalFor(cat);
   const isFirstPage = requestedPage === 1;
   const perPage = isFirstPage ? firstPageTotal : PAGE_SIZE;
+  // The first page may show more (or fewer) than PAGE_SIZE items, so pages ≥ 2
+  // must offset past the first page's count — not (page-1)*PAGE_SIZE — otherwise
+  // the boundary item(s) get duplicated across pages.
+  const offset = isFirstPage
+    ? undefined
+    : firstPageTotal + (requestedPage - 2) * PAGE_SIZE;
   const { posts, total, totalPages } = await getPostsPaged({
     categoryId: cat.id,
     perPage,
     page: requestedPage,
+    offset,
   });
 
   if (!posts.length && requestedPage > 1) notFound();
