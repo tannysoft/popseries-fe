@@ -240,63 +240,98 @@ export function ScoopHero({ post }: { post: NormalizedPost }) {
   return (
     <Link
       href={`/${post.slug}`}
-      className="group relative block overflow-hidden rounded-[2rem] bg-ink-900 shadow-pop"
+      className="group relative block overflow-hidden rounded-[2rem] border border-butter-200/70 bg-gradient-to-br from-butter-50 via-cream to-coral-50 shadow-pop"
     >
-      <div className="relative aspect-[16/10] md:aspect-[21/10]">
-        {post.image ? (
-          <Image
-            src={post.image.url}
-            alt={post.image.alt || post.title}
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover transition-transform duration-[1200ms] group-hover:scale-105"
+      {/* Decorative tabloid blobs */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-coral-200/40 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-10 bottom-0 h-56 w-56 rounded-full bg-butter-200/50 blur-3xl"
+      />
+
+      <div className="relative grid items-center gap-6 p-5 md:gap-10 md:p-8 lg:grid-cols-[1.05fr_1fr] lg:p-10">
+        {/* Clear photo clipping — taped, tilted, NO dark overlay */}
+        <div className="relative mx-auto w-full max-w-xl -rotate-1 rounded-2xl bg-paper p-3 shadow-pop ring-1 ring-ink-100/70 transition-transform duration-500 group-hover:rotate-0">
+          <span
+            aria-hidden
+            className="absolute -top-3 left-1/2 h-6 w-28 -translate-x-1/2 -rotate-3 rounded-[3px] bg-butter-200/80 shadow-sm"
           />
-        ) : (
-          <div className="absolute inset-0 gradient-mesh" />
-        )}
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-ink-100">
+            {post.image ? (
+              <Image
+                src={post.image.url}
+                alt={post.image.alt || post.title}
+                fill
+                priority
+                sizes="(min-width: 1024px) 640px, 100vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+              />
+            ) : (
+              <div className="absolute inset-0 gradient-mesh" />
+            )}
+            {/* Small corner stamp — does not cover the photo */}
+            <span className="absolute right-3 top-3 -rotate-6 inline-flex flex-col items-center justify-center rounded-xl border-2 border-coral-300 bg-coral-500/95 px-3 py-1.5 text-center text-cream shadow-pop">
+              <span className="text-[9px] font-bold uppercase tracking-[0.22em]">
+                Exclusive
+              </span>
+              <span className="-mt-0.5 text-base font-extrabold leading-none">
+                Inside
+              </span>
+            </span>
+          </div>
+        </div>
 
-        {/* Heavy moody gradient like tabloid */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-ink-900 via-ink-900/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-ink-900/30 via-transparent to-ink-900/40" />
-
-        {/* Exclusive stamp (rotated) */}
-        <span className="absolute top-6 right-6 md:top-10 md:right-10 -rotate-6 inline-flex flex-col items-center justify-center text-center rounded-2xl border-[3px] border-coral-300 bg-coral-500/95 text-cream px-3 py-2.5 md:px-5 md:py-3 shadow-pop">
-          <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.22em]">
-            Exclusive
-          </span>
-          <span className="text-base md:text-2xl font-extrabold leading-none mt-0.5">
-            Inside
-          </span>
-        </span>
-
-        {/* Cover headlines */}
-        <div className="absolute inset-x-0 bottom-0 p-6 md:p-10">
-          <div className="flex flex-wrap items-center gap-3 text-cream/80">
-            <span className="inline-flex items-center gap-2 rounded-full bg-butter-300 text-ink-900 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">
-              <span className="h-1.5 w-1.5 rounded-full bg-coral-500 animate-pulse" />
+        {/* Headline panel — on paper, fully readable */}
+        <div className="relative">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full bg-coral-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-cream">
+              <span className="h-1.5 w-1.5 rounded-full bg-cream animate-pulse" />
               Pop Scoop · ฉบับพิเศษ
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cream/60">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500">
               {shortDateFmt.format(new Date(post.date))}
             </span>
           </div>
-          <h2 className="mt-4 line-clamp-3 text-balance text-3xl font-extrabold leading-[1.05] text-cream md:text-5xl lg:text-6xl">
+
+          <h2 className="mt-4 line-clamp-4 text-balance text-3xl font-extrabold leading-[1.08] text-ink-900 md:text-4xl lg:text-5xl">
             {post.title}
           </h2>
-          <p className="mt-3 hidden md:block line-clamp-2 max-w-3xl text-pretty text-base leading-relaxed text-cream/70">
+
+          <p className="mt-4 line-clamp-3 text-pretty text-base leading-relaxed text-ink-500 md:text-lg">
             {post.excerpt}
           </p>
+
           <div className="mt-5 flex flex-wrap items-center gap-2">
             {["เรื่องราว", "ดราม่า", "เบื้องหลัง"].map((tag) => (
               <span
                 key={tag}
-                className="inline-flex rounded-full bg-cream/10 backdrop-blur px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-cream/80"
+                className="inline-flex rounded-full bg-paper px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-ink-700 ring-1 ring-ink-100"
               >
                 {tag}
               </span>
             ))}
           </div>
+
+          <span className="mt-7 inline-flex h-11 items-center gap-2 rounded-full bg-ink-900 px-5 text-sm font-semibold text-cream transition-transform group-hover:-translate-y-0.5">
+            อ่านสกู๊ปเต็ม
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M5 12h14" />
+              <path d="m13 5 7 7-7 7" />
+            </svg>
+          </span>
         </div>
       </div>
     </Link>

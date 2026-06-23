@@ -30,13 +30,13 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
   const [related, mostViewed] = await Promise.all([
     post.category
       ? getPosts({
-          perPage: 4,
+          perPage: 13,
           categoryId: post.category.id,
           exclude: [post.id],
-        }).then((p) => p.slice(0, 3))
+        }).then((p) => p.slice(0, 12))
       : Promise.resolve([] as NormalizedPost[]),
-    getMostViewedPosts({ limit: 6, exclude: [post.id] }).then((p) =>
-      p.slice(0, 5),
+    getMostViewedPosts({ limit: 12, exclude: [post.id] }).then((p) =>
+      p.slice(0, 10),
     ),
   ]);
 
@@ -73,24 +73,7 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
         />
 
         <div className="container-pop relative pt-12 pb-10 md:pt-16">
-          <nav className="text-xs font-semibold uppercase tracking-widest text-ink-500">
-            <Link href="/" className="hover:text-ink-900">
-              หน้าแรก
-            </Link>
-            <span className="mx-2 text-ink-300">/</span>
-            {post.category ? (
-              <Link
-                href={`/${post.category.slug}`}
-                className="hover:text-ink-900"
-              >
-                {post.category.label}
-              </Link>
-            ) : (
-              <span>บทความ</span>
-            )}
-          </nav>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {post.category && (
               <span className={`chip ${accent.chip}`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${accent.fill}`} />
@@ -166,6 +149,7 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
                 alt={post.image.alt || post.title}
                 fill
                 priority
+                unoptimized
                 sizes="(min-width: 1280px) 1280px, 100vw"
                 className="object-cover"
               />
@@ -274,31 +258,6 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
                   </ol>
                 </div>
               )}
-              <div className="rounded-2xl border border-ink-100/70 bg-paper p-5">
-                <h4 className="text-xs font-semibold uppercase tracking-widest text-ink-300">
-                  ในบทความนี้
-                </h4>
-                <dl className="mt-4 space-y-3 text-sm">
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-ink-500">หมวด</dt>
-                    <dd className="font-semibold text-ink-900">
-                      {post.category?.label || "—"}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-ink-500">เผยแพร่</dt>
-                    <dd className="font-semibold text-ink-900">
-                      {dateFmt.format(new Date(post.date))}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-ink-500">เวลาอ่าน</dt>
-                    <dd className="font-semibold text-ink-900">
-                      {minutes} นาที
-                    </dd>
-                  </div>
-                </dl>
-              </div>
             </div>
           </aside>
         </div>
@@ -323,9 +282,9 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
               </Link>
             )}
           </div>
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {related.map((p) => (
-              <ArticleCard key={p.id} post={p} />
+              <ArticleCard key={p.id} post={p} showAuthor={false} />
             ))}
           </div>
         </section>

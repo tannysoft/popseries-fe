@@ -75,6 +75,7 @@ export type NormalizedPost = {
 type FetchOpts = {
   perPage?: number;
   page?: number;
+  offset?: number;
   exclude?: number[];
   search?: string;
   tagId?: number;
@@ -157,17 +158,22 @@ function pickImage(post: WPPost): NormalizedPost["image"] {
   const fm = post._embedded?.["wp:featuredmedia"]?.[0];
   if (!fm) return null;
   const sizes = fm.media_details?.sizes;
-  const candidate =
+  // Prefer the original full-size upload so Next/Image can downscale it crisply
+  // for any display size. Only fall back to the largest named rendition when the
+  // original URL is unavailable.
+  const fallback =
+    sizes?.full ||
+    sizes?.["2048x2048"] ||
+    sizes?.["1536x1536"] ||
     sizes?.large ||
     sizes?.medium_large ||
-    sizes?.full ||
     sizes?.medium ||
     null;
   return {
-    url: candidate?.source_url || fm.source_url,
+    url: fm.source_url || fallback?.source_url || "",
     alt: fm.alt_text || "",
-    width: candidate?.width || fm.media_details?.width,
-    height: candidate?.height || fm.media_details?.height,
+    width: fm.media_details?.width || fallback?.width,
+    height: fm.media_details?.height || fallback?.height,
   };
 }
 
@@ -234,9 +240,12 @@ export async function getPosts(opts: FetchOpts & { categoryId?: number } = {}) {
 export async function getPostsPaged(
   opts: FetchOpts & { categoryId?: number } = {},
 ): Promise<{ posts: NormalizedPost[]; total: number; totalPages: number }> {
+  // When an explicit offset is given, WordPress ignores `page`; omit it so the
+  // two don't conflict. Otherwise fall back to page-based pagination.
   const q = buildQuery({
     per_page: opts.perPage ?? 18,
-    page: opts.page ?? 1,
+    page: opts.offset === undefined ? opts.page ?? 1 : undefined,
+    offset: opts.offset,
     _embed: 1,
     categories: opts.categoryId,
     tags: opts.tagId,
