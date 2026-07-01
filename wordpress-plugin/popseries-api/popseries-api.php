@@ -199,6 +199,19 @@ function popseries_format_post( $post, $with_content = false ) {
 		$data['_embedded']['wp:featuredmedia'] = array( $featured );
 	}
 
+	// Editorial review score. Compact form (score + subscores) on lists so the
+	// score pill works; pros/cons text only on single fetches.
+	$review = popseries_review_data( $id, $with_content );
+	if ( $review ) {
+		$data['review'] = $review;
+	}
+
+	// Series metadata (episodes/year/genres/platforms/formats) for the hero.
+	$series = popseries_series_data( $id );
+	if ( $series ) {
+		$data['series'] = $series;
+	}
+
 	// Yoast SEO head (og:*, twitter, canonical, description…) — only on single
 	// fetches, where the frontend builds page metadata. Keeps lists light.
 	if ( $with_content ) {
@@ -604,6 +617,11 @@ add_action( 'rest_api_init', 'popseries_register_routes' );
  * popseries_format_post() is available to the curation module.
  */
 require_once plugin_dir_path( __FILE__ ) . 'includes/curation.php';
+// Review scores: meta box (admin) + popseries_review_data() used by the API,
+// so load everywhere.
+require_once plugin_dir_path( __FILE__ ) . 'includes/review.php';
+// Series metadata (episodes/year/genres/…): meta box + popseries_series_data().
+require_once plugin_dir_path( __FILE__ ) . 'includes/series-info.php';
 // Revalidation hooks must load everywhere (front, admin, cron) so save_post
 // and status transitions always ping the frontend.
 require_once plugin_dir_path( __FILE__ ) . 'includes/revalidate.php';

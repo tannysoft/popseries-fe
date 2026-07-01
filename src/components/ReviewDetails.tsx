@@ -1,6 +1,5 @@
-function fakeScore(id: number) {
-  return (((id * 7) % 28) + 70) / 10;
-}
+import type { ReviewData } from "@/lib/api";
+import { resolveReview } from "@/lib/review";
 
 function StarRow({ score }: { score: number }) {
   // 0–5 stars, half-step
@@ -41,40 +40,23 @@ function StarRow({ score }: { score: number }) {
   );
 }
 
-const VERDICTS = [
-  { min: 9, label: "Pop Pick", desc: "ต้องดู! ทีมงานยกให้เป็นของเด็ดประจำสัปดาห์" },
-  { min: 8, label: "ควรดู", desc: "คุณภาพดีเยี่ยม คนที่ชอบแนวนี้ไม่ผิดหวัง" },
-  { min: 7, label: "น่าสนับสนุน", desc: "มีจุดน่าสนใจ ดูได้สบายๆ ไม่เสียดายเวลา" },
-  { min: 0, label: "ดูในวันว่าง", desc: "พอผ่านได้ ถ้ามีเวลาเหลือลองเปิดดู" },
-];
-
-function pickVerdict(score: number) {
-  return VERDICTS.find((v) => score >= v.min) ?? VERDICTS[VERDICTS.length - 1];
-}
-
 type Props = {
-  postId: number;
+  review?: ReviewData;
 };
 
-export function ReviewDetails({ postId }: Props) {
-  const score = fakeScore(postId);
-  const verdict = pickVerdict(score);
-  const breakdown = [
-    { label: "เรื่องราว", value: Math.min(10, score + 0.4) },
-    { label: "การแสดง", value: Math.max(0, score - 0.3) },
-    { label: "งานสร้าง", value: Math.min(10, score + 0.1) },
-    { label: "เพลงประกอบ", value: Math.max(0, score - 0.6) },
-  ];
+export function ReviewDetails({ review }: Props) {
+  // No editor score → no review block (never fabricate one).
+  if (!review) return null;
 
-  const pros = [
-    "บทคมและพล็อตชวนติดตามทุกตอน",
-    "การแสดงของตัวเอกเข้าถึงอารมณ์",
-    "งานภาพและการกำกับศิลป์โดดเด่น",
+  const resolved = resolveReview(review);
+  const { score, verdict, pros, cons } = resolved;
+  const breakdown = [
+    { label: "เรื่องราว", value: resolved.story },
+    { label: "การแสดง", value: resolved.acting },
+    { label: "งานสร้าง", value: resolved.production },
+    { label: "เพลงประกอบ", value: resolved.music },
   ];
-  const cons = [
-    "ช่วงต้นเรื่องเดินช้ากว่าที่คาด",
-    "พล็อตย่อยบางจุดยังคลี่คลายไม่เต็มที่",
-  ];
+  const hasVerdicts = pros.length > 0 || cons.length > 0;
 
   return (
     <section className="not-prose mb-10 overflow-hidden rounded-[2rem] border border-ink-100 bg-paper shadow-pop">
@@ -111,7 +93,11 @@ export function ReviewDetails({ postId }: Props) {
       </div>
 
       {/* Breakdown + Pros/Cons */}
-      <div className="grid gap-8 px-6 py-7 md:grid-cols-[1.1fr_1fr] md:px-8">
+      <div
+        className={`grid gap-8 px-6 py-7 md:px-8 ${
+          hasVerdicts ? "md:grid-cols-[1.1fr_1fr]" : ""
+        }`}
+      >
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-widest text-ink-300">
             คะแนนรายหัวข้อ
@@ -139,67 +125,73 @@ export function ReviewDetails({ postId }: Props) {
           </ul>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-1 md:gap-4">
-          <div className="rounded-2xl border-2 border-teal-200 bg-teal-100/70 p-4">
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-teal-500">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-              จุดเด่น
-            </p>
-            <ul className="mt-2 space-y-1.5 text-sm text-ink-700">
-              {pros.map((p) => (
-                <li key={p} className="flex gap-2">
-                  <span
-                    className="mt-2 h-1 w-1 shrink-0 rounded-full bg-teal-400"
+        {hasVerdicts && (
+          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-1 md:gap-4">
+            {pros.length > 0 && (
+              <div className="rounded-2xl border-2 border-teal-200 bg-teal-100/70 p-4">
+                <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-teal-500">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     aria-hidden
-                  />
-                  <span>{p}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-2xl border-2 border-coral-200 bg-coral-100/70 p-4">
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-coral-500">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-              จุดที่ยังขาด
-            </p>
-            <ul className="mt-2 space-y-1.5 text-sm text-ink-700">
-              {cons.map((c) => (
-                <li key={c} className="flex gap-2">
-                  <span
-                    className="mt-2 h-1 w-1 shrink-0 rounded-full bg-coral-400"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  จุดเด่น
+                </p>
+                <ul className="mt-2 space-y-1.5 text-sm text-ink-700">
+                  {pros.map((p) => (
+                    <li key={p} className="flex gap-2">
+                      <span
+                        className="mt-2 h-1 w-1 shrink-0 rounded-full bg-teal-400"
+                        aria-hidden
+                      />
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {cons.length > 0 && (
+              <div className="rounded-2xl border-2 border-coral-200 bg-coral-100/70 p-4">
+                <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-coral-500">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     aria-hidden
-                  />
-                  <span>{c}</span>
-                </li>
-              ))}
-            </ul>
+                  >
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                  จุดที่ยังขาด
+                </p>
+                <ul className="mt-2 space-y-1.5 text-sm text-ink-700">
+                  {cons.map((c) => (
+                    <li key={c} className="flex gap-2">
+                      <span
+                        className="mt-2 h-1 w-1 shrink-0 rounded-full bg-coral-400"
+                        aria-hidden
+                      />
+                      <span>{c}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

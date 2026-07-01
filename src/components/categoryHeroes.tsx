@@ -1,6 +1,8 @@
+import { Fragment } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { NormalizedPost } from "@/lib/api";
+import { resolveReview } from "@/lib/review";
 
 const dateFmt = new Intl.DateTimeFormat("th-TH", {
   weekday: "long",
@@ -14,14 +16,6 @@ const shortDateFmt = new Intl.DateTimeFormat("th-TH", {
   month: "short",
   year: "numeric",
 });
-
-function fakeScore(id: number) {
-  return (((id * 7) % 28) + 70) / 10;
-}
-
-function fakeEpisodes(id: number) {
-  return 8 + (id % 9);
-}
 
 /* ====================================================================== */
 /* News — Above-the-fold newspaper                                         */
@@ -131,12 +125,14 @@ function StarRating({ score }: { score: number }) {
 }
 
 export function ReviewHero({ post }: { post: NormalizedPost }) {
-  const score = fakeScore(post.id);
-  const breakdown = [
-    { label: "เรื่องราว", value: Math.min(10, score + 0.4) },
-    { label: "การแสดง", value: Math.max(0, score - 0.3) },
-    { label: "งานสร้าง", value: Math.min(10, score + 0.1) },
-  ];
+  const review = post.review ? resolveReview(post.review) : null;
+  const breakdown = review
+    ? [
+        { label: "เรื่องราว", value: review.story },
+        { label: "การแสดง", value: review.acting },
+        { label: "งานสร้าง", value: review.production },
+      ]
+    : [];
 
   return (
     <Link
@@ -169,18 +165,20 @@ export function ReviewHero({ post }: { post: NormalizedPost }) {
             <span>Issue · {shortDateFmt.format(new Date(post.date))}</span>
           </div>
 
-          {/* Score panel */}
-          <div className="flex items-end gap-4">
-            <span className="text-7xl font-extrabold leading-none bg-gradient-to-br from-coral-400 via-coral-300 to-butter-300 bg-clip-text text-transparent tabular-nums md:text-8xl">
-              {score.toFixed(1)}
-            </span>
-            <div className="pb-2">
-              <StarRating score={score} />
-              <p className="mt-1 text-xs font-semibold text-ink-500">
-                จาก 10 คะแนนเต็ม
-              </p>
+          {/* Score panel — only when an editor has scored this review */}
+          {review && (
+            <div className="flex items-end gap-4">
+              <span className="text-7xl font-extrabold leading-none bg-gradient-to-br from-coral-400 via-coral-300 to-butter-300 bg-clip-text text-transparent tabular-nums md:text-8xl">
+                {review.score.toFixed(1)}
+              </span>
+              <div className="pb-2">
+                <StarRating score={review.score} />
+                <p className="mt-1 text-xs font-semibold text-ink-500">
+                  จาก 10 คะแนนเต็ม
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           <h2 className="line-clamp-3 text-balance text-xl font-extrabold leading-tight text-ink-900 md:text-2xl lg:text-3xl">
             {post.title}
@@ -191,24 +189,26 @@ export function ReviewHero({ post }: { post: NormalizedPost }) {
           </p>
 
           {/* Breakdown bars */}
-          <ul className="space-y-2.5">
-            {breakdown.map((b) => (
-              <li key={b.label} className="flex items-center gap-3 text-xs">
-                <span className="w-16 shrink-0 font-semibold text-ink-700">
-                  {b.label}
-                </span>
-                <span className="flex-1 h-1.5 rounded-full bg-ink-100 overflow-hidden">
-                  <span
-                    className="block h-full bg-gradient-to-r from-coral-300 via-butter-300 to-teal-400"
-                    style={{ width: `${(b.value / 10) * 100}%` }}
-                  />
-                </span>
-                <span className="w-9 text-right font-bold text-ink-900 tabular-nums">
-                  {b.value.toFixed(1)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {breakdown.length > 0 && (
+            <ul className="space-y-2.5">
+              {breakdown.map((b) => (
+                <li key={b.label} className="flex items-center gap-3 text-xs">
+                  <span className="w-16 shrink-0 font-semibold text-ink-700">
+                    {b.label}
+                  </span>
+                  <span className="flex-1 h-1.5 rounded-full bg-ink-100 overflow-hidden">
+                    <span
+                      className="block h-full bg-gradient-to-r from-coral-300 via-butter-300 to-teal-400"
+                      style={{ width: `${(b.value / 10) * 100}%` }}
+                    />
+                  </span>
+                  <span className="w-9 text-right font-bold text-ink-900 tabular-nums">
+                    {b.value.toFixed(1)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
 
           <span className="inline-flex items-center gap-2 text-sm font-semibold text-teal-500 group-hover:gap-3 transition-all mt-auto">
             อ่านรีวิวเต็ม
@@ -343,7 +343,22 @@ export function ScoopHero({ post }: { post: NormalizedPost }) {
 /* ====================================================================== */
 
 export function SeriesHero({ post }: { post: NormalizedPost }) {
-  const episodes = fakeEpisodes(post.id);
+  const series = post.series;
+  const year = series?.year ?? new Date(post.date).getFullYear();
+  // Build the metadata strip from whatever the editor filled in.
+  const metaItems: React.ReactNode[] = [];
+  if (series?.episodes) {
+    metaItems.push(
+      <>
+        <span className="text-cream">{series.episodes}</span> ตอน
+      </>,
+    );
+  }
+  if (year) metaItems.push(<>{year}</>);
+  if (series?.genres?.length) metaItems.push(<>{series.genres.join(" · ")}</>);
+  if (series?.platforms?.length)
+    metaItems.push(<>{series.platforms.join(" · ")}</>);
+
   return (
     <Link
       href={`/${post.slug}`}
@@ -373,10 +388,12 @@ export function SeriesHero({ post }: { post: NormalizedPost }) {
             <span className="h-1.5 w-1.5 rounded-full bg-ink-900 animate-pulse" />
             Now streaming
           </span>
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-cream/70">
-            <span className="inline-block h-2 w-2 rounded-full bg-coral-300" />
-            HD · พากย์ไทย · ซับไทย
-          </span>
+          {series?.formats?.length ? (
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-cream/70">
+              <span className="inline-block h-2 w-2 rounded-full bg-coral-300" />
+              {series.formats.join(" · ")}
+            </span>
+          ) : null}
         </div>
 
         {/* Title block bottom-left */}
@@ -391,18 +408,22 @@ export function SeriesHero({ post }: { post: NormalizedPost }) {
             {post.excerpt}
           </p>
 
-          {/* Metadata strip */}
-          <ul className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-cream/70">
-            <li>
-              <span className="text-cream">{episodes}</span> ตอน
-            </li>
-            <li aria-hidden className="h-1 w-1 rounded-full bg-cream/40" />
-            <li>2026</li>
-            <li aria-hidden className="h-1 w-1 rounded-full bg-cream/40" />
-            <li>ดราม่า · โรแมนติก</li>
-            <li aria-hidden className="h-1 w-1 rounded-full bg-cream/40" />
-            <li>tvN · Netflix</li>
-          </ul>
+          {/* Metadata strip — only the fields the editor provided */}
+          {metaItems.length > 0 && (
+            <ul className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-cream/70">
+              {metaItems.map((item, i) => (
+                <Fragment key={i}>
+                  {i > 0 && (
+                    <li
+                      aria-hidden
+                      className="h-1 w-1 rounded-full bg-cream/40"
+                    />
+                  )}
+                  <li>{item}</li>
+                </Fragment>
+              ))}
+            </ul>
+          )}
 
           <div className="mt-6 flex flex-wrap gap-3">
             <span className="inline-flex h-11 items-center gap-2 rounded-full bg-coral-300 text-ink-900 px-5 text-sm font-semibold transition-transform group-hover:-translate-y-0.5">

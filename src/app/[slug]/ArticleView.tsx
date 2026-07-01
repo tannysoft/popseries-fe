@@ -170,9 +170,9 @@ export async function ArticleView({ post }: { post: NormalizedPost }) {
 
           {/* Content */}
           <div className="min-w-0">
-            {post.category?.key === "review" && (
-              <ReviewDetails postId={post.id} />
-            )}
+            {/* Renders only when an editor set a review score (any category). */}
+            <ReviewDetails review={post.review} />
+
             <div
               className="prose-pop prose-pop-drop"
               dangerouslySetInnerHTML={{ __html: post.contentHtml }}

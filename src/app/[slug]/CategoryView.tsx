@@ -32,15 +32,6 @@ const fullDateFmt = new Intl.DateTimeFormat("th-TH", {
   year: "numeric",
 });
 
-function fakeScore(id: number) {
-  // deterministic 7.0 – 9.7
-  return (((id * 7) % 28) + 70) / 10;
-}
-
-function fakeViews(id: number) {
-  return ((id * 13) % 90) + 5;
-}
-
 export function CategoryView({
   category,
   posts,
@@ -356,7 +347,7 @@ function ReviewLayout({
           />
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             {featured.map((p) => {
-              const score = fakeScore(p.id);
+              const score = p.review?.score;
               return (
                 <Link
                   key={p.id}
@@ -375,9 +366,11 @@ function ReviewLayout({
                     ) : (
                       <div className="absolute inset-0 gradient-mesh" />
                     )}
-                    <span className="absolute bottom-2 left-2">
-                      <ScorePill score={score} />
-                    </span>
+                    {score !== undefined && (
+                      <span className="absolute bottom-2 left-2">
+                        <ScorePill score={score} />
+                      </span>
+                    )}
                   </div>
                   <div className="min-w-0 self-center">
                     <span className="chip bg-teal-100 text-teal-500">
@@ -389,15 +382,17 @@ function ReviewLayout({
                     <p className="mt-1 line-clamp-2 text-xs text-ink-500 sm:text-sm">
                       {p.excerpt}
                     </p>
-                    <div
-                      className="mt-3 h-1 w-full rounded-full bg-ink-100 overflow-hidden"
-                      aria-hidden
-                    >
-                      <span
-                        className="block h-full bg-gradient-to-r from-coral-300 via-butter-300 to-teal-400"
-                        style={{ width: `${(score / 10) * 100}%` }}
-                      />
-                    </div>
+                    {score !== undefined && (
+                      <div
+                        className="mt-3 h-1 w-full rounded-full bg-ink-100 overflow-hidden"
+                        aria-hidden
+                      >
+                        <span
+                          className="block h-full bg-gradient-to-r from-coral-300 via-butter-300 to-teal-400"
+                          style={{ width: `${(score / 10) * 100}%` }}
+                        />
+                      </div>
+                    )}
                     <p className="mt-2 text-xs text-ink-300">
                       {dateFmt.format(new Date(p.date))}
                     </p>
@@ -648,7 +643,7 @@ function SeriesLayout({
                       {p.title}
                     </h3>
                     <p className="mt-1 text-xs text-ink-500">
-                      {fakeViews(p.id)}K คนกำลังดู
+                      {fullDateFmt.format(new Date(p.date))}
                     </p>
                   </div>
                 </Link>

@@ -55,6 +55,29 @@ export type YoastHead = {
   twitter_image?: string;
 };
 
+// Editorial review scores from the Pop Series Review meta box. Subscores are
+// null when the editor left them blank (the UI derives them from `score`).
+export type ReviewData = {
+  score: number;
+  subscores?: {
+    story: number | null;
+    acting: number | null;
+    production: number | null;
+    music: number | null;
+  };
+  pros?: string[];
+  cons?: string[];
+};
+
+// Series metadata from the "ข้อมูลซีรีส์" meta box (all fields optional).
+export type SeriesInfo = {
+  episodes?: number | null;
+  year?: number | null;
+  genres?: string[];
+  platforms?: string[];
+  formats?: string[];
+};
+
 export type WPPost = {
   id: number;
   slug: string;
@@ -66,6 +89,8 @@ export type WPPost = {
   content: WPRendered;
   categories: number[];
   tags: number[];
+  review?: ReviewData;
+  series?: SeriesInfo;
   yoast_head_json?: YoastHead;
   _embedded?: {
     author?: WPAuthor[];
@@ -89,6 +114,8 @@ export type NormalizedPost = {
   tags: WPTerm[];
   originalLink: string;
   seo?: YoastHead;
+  review?: ReviewData;
+  series?: SeriesInfo;
 };
 
 type FetchOpts = {
@@ -249,6 +276,8 @@ export function normalizePost(p: WPPost): NormalizedPost {
     tags: pickTags(p),
     originalLink: p.link,
     seo: p.yoast_head_json,
+    review: p.review,
+    series: p.series,
   };
 }
 
