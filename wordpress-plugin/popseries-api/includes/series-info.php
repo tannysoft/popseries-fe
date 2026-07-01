@@ -13,13 +13,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 const POPSERIES_SERIES_NONCE = 'popseries_series_save';
 
-/** Free-text, comma-separated meta keys → label. */
+/**
+ * Free-text, comma-separated meta keys → [label, placeholder].
+ * Platforms and formats are taxonomies now (see taxonomies.php), not meta.
+ */
 function popseries_series_list_keys() {
 	return array(
-		'_ps_series_genres'    => array( 'แนว', 'เช่น ดราม่า, โรแมนติก' ),
-		'_ps_series_platforms' => array( 'แพลตฟอร์ม/ช่อง', 'เช่น tvN, Netflix' ),
-		'_ps_series_formats'   => array( 'รูปแบบ', 'เช่น HD, พากย์ไทย, ซับไทย' ),
+		'_ps_series_genres' => array( 'แนว', 'เช่น ดราม่า, โรแมนติก' ),
 	);
+}
+
+/**
+ * Term names attached to a post for a taxonomy (empty array when none).
+ *
+ * @param int    $post_id
+ * @param string $taxonomy
+ * @return string[]
+ */
+function popseries_series_terms( $post_id, $taxonomy ) {
+	$terms = get_the_terms( $post_id, $taxonomy );
+	if ( ! $terms || is_wp_error( $terms ) ) {
+		return array();
+	}
+	return array_values( wp_list_pluck( $terms, 'name' ) );
 }
 
 /**
@@ -64,8 +80,8 @@ function popseries_series_data( $post_id ) {
 		'episodes'  => popseries_series_int( $post_id, '_ps_series_episodes' ),
 		'year'      => popseries_series_int( $post_id, '_ps_series_year' ),
 		'genres'    => popseries_series_csv( $post_id, '_ps_series_genres' ),
-		'platforms' => popseries_series_csv( $post_id, '_ps_series_platforms' ),
-		'formats'   => popseries_series_csv( $post_id, '_ps_series_formats' ),
+		'platforms' => popseries_series_terms( $post_id, 'ps_platform' ),
+		'formats'   => popseries_series_terms( $post_id, 'ps_format' ),
 	);
 
 	$empty = null === $data['episodes'] && null === $data['year'] &&
@@ -99,7 +115,7 @@ function popseries_series_render_metabox( $post ) {
 	$episodes = get_post_meta( $post->ID, '_ps_series_episodes', true );
 	$year     = get_post_meta( $post->ID, '_ps_series_year', true );
 	?>
-	<p class="description" style="margin-top:0">ใช้กับหน้า Series — เว้นว่างช่องไหน หน้าเว็บจะซ่อนช่องนั้น</p>
+	<p class="description" style="margin-top:0">ใช้กับหน้า Series — เว้นว่างช่องไหน หน้าเว็บจะซ่อนช่องนั้น<br /><strong>แพลตฟอร์ม</strong> และ <strong>รูปแบบ</strong> เลือกจากกล่องด้านข้าง (taxonomy)</p>
 	<p>
 		<label for="_ps_series_episodes"><strong>จำนวนตอน</strong></label><br />
 		<input type="number" min="0" step="1" id="_ps_series_episodes" name="_ps_series_episodes"

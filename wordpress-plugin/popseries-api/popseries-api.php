@@ -620,6 +620,8 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/curation.php';
 // Review scores: meta box (admin) + popseries_review_data() used by the API,
 // so load everywhere.
 require_once plugin_dir_path( __FILE__ ) . 'includes/review.php';
+// Series taxonomies (platform/format) + one-time term seeding.
+require_once plugin_dir_path( __FILE__ ) . 'includes/taxonomies.php';
 // Series metadata (episodes/year/genres/…): meta box + popseries_series_data().
 require_once plugin_dir_path( __FILE__ ) . 'includes/series-info.php';
 // Revalidation hooks must load everywhere (front, admin, cron) so save_post
