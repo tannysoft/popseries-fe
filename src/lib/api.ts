@@ -1,7 +1,7 @@
 import { CATEGORY_BY_ID, type CategoryMeta } from "./categories";
 
-const API_BASE = "https://www.popseries.co/wp-json/wp/v2";
-const WPP_BASE = "https://www.popseries.co/wp-json/wordpress-popular-posts/v1";
+const API_BASE = "https://www.popseries.co/wp-json/popseries/v1";
+const WPP_BASE = "https://www.popseries.co/wp-json/popseries/v1";
 const REVALIDATE_SECONDS = 60 * 10;
 
 type WPRendered = { rendered: string };
