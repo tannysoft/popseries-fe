@@ -14,17 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 const POPSERIES_SERIES_NONCE = 'popseries_series_save';
 
 /**
- * Free-text, comma-separated meta keys → [label, placeholder].
- * Platforms and formats are taxonomies now (see taxonomies.php), not meta.
- */
-function popseries_series_list_keys() {
-	return array(
-		'_ps_series_genres' => array( 'แนว', 'เช่น ดราม่า, โรแมนติก' ),
-	);
-}
-
-/**
  * Term names attached to a post for a taxonomy (empty array when none).
+ * Genres, platforms and formats are all taxonomies now (see taxonomies.php).
  *
  * @param int    $post_id
  * @param string $taxonomy
@@ -36,22 +27,6 @@ function popseries_series_terms( $post_id, $taxonomy ) {
 		return array();
 	}
 	return array_values( wp_list_pluck( $terms, 'name' ) );
-}
-
-/**
- * Split a comma-separated meta value into a clean string array.
- *
- * @param int    $post_id
- * @param string $key
- * @return string[]
- */
-function popseries_series_csv( $post_id, $key ) {
-	$value = (string) get_post_meta( $post_id, $key, true );
-	if ( '' === trim( $value ) ) {
-		return array();
-	}
-	$parts = explode( ',', $value );
-	return array_values( array_filter( array_map( 'trim', $parts ) ) );
 }
 
 /**
@@ -79,7 +54,7 @@ function popseries_series_data( $post_id ) {
 	$data = array(
 		'episodes'  => popseries_series_int( $post_id, '_ps_series_episodes' ),
 		'year'      => popseries_series_int( $post_id, '_ps_series_year' ),
-		'genres'    => popseries_series_csv( $post_id, '_ps_series_genres' ),
+		'genres'    => popseries_series_terms( $post_id, 'ps_genre' ),
 		'platforms' => popseries_series_terms( $post_id, 'ps_platform' ),
 		'formats'   => popseries_series_terms( $post_id, 'ps_format' ),
 	);
@@ -115,7 +90,7 @@ function popseries_series_render_metabox( $post ) {
 	$episodes = get_post_meta( $post->ID, '_ps_series_episodes', true );
 	$year     = get_post_meta( $post->ID, '_ps_series_year', true );
 	?>
-	<p class="description" style="margin-top:0">ใช้กับหน้า Series — เว้นว่างช่องไหน หน้าเว็บจะซ่อนช่องนั้น<br /><strong>แพลตฟอร์ม</strong> และ <strong>รูปแบบ</strong> เลือกจากกล่องด้านข้าง (taxonomy)</p>
+	<p class="description" style="margin-top:0">ใช้กับหน้า Series — เว้นว่างช่องไหน หน้าเว็บจะซ่อนช่องนั้น<br /><strong>แนว · แพลตฟอร์ม · รูปแบบ</strong> เลือกจากกล่องด้านข้าง (taxonomy)</p>
 	<p>
 		<label for="_ps_series_episodes"><strong>จำนวนตอน</strong></label><br />
 		<input type="number" min="0" step="1" id="_ps_series_episodes" name="_ps_series_episodes"
@@ -126,14 +101,6 @@ function popseries_series_render_metabox( $post ) {
 		<input type="number" min="0" step="1" id="_ps_series_year" name="_ps_series_year"
 			value="<?php echo esc_attr( $year ); ?>" class="widefat" placeholder="เช่น 2026 (เว้นว่าง = ปีที่เผยแพร่)" />
 	</p>
-	<?php foreach ( popseries_series_list_keys() as $key => $meta ) : ?>
-		<p>
-			<label for="<?php echo esc_attr( $key ); ?>"><strong><?php echo esc_html( $meta[0] ); ?></strong> (คั่นด้วย ,)</label><br />
-			<input type="text" id="<?php echo esc_attr( $key ); ?>" name="<?php echo esc_attr( $key ); ?>"
-				value="<?php echo esc_attr( get_post_meta( $post->ID, $key, true ) ); ?>"
-				class="widefat" placeholder="<?php echo esc_attr( $meta[1] ); ?>" />
-		</p>
-	<?php endforeach; ?>
 	<?php
 }
 
@@ -162,14 +129,6 @@ function popseries_series_save_metabox( $post_id ) {
 			update_post_meta( $post_id, $key, max( 0, (int) $raw ) );
 		}
 	}
-
-	foreach ( array_keys( popseries_series_list_keys() ) as $key ) {
-		$raw = isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : '';
-		if ( '' === trim( $raw ) ) {
-			delete_post_meta( $post_id, $key );
-		} else {
-			update_post_meta( $post_id, $key, $raw );
-		}
-	}
+	// Genres/platforms/formats are taxonomies — WordPress saves those itself.
 }
 add_action( 'save_post_post', 'popseries_series_save_metabox' );

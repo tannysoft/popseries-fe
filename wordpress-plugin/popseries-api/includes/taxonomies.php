@@ -58,6 +58,28 @@ function popseries_register_taxonomies() {
 			'rewrite'           => array( 'slug' => 'format' ),
 		)
 	);
+
+	register_taxonomy(
+		'ps_genre',
+		'post',
+		array(
+			'labels'            => array(
+				'name'          => 'แนว',
+				'singular_name' => 'แนว',
+				'menu_name'     => 'แนว',
+				'all_items'     => 'แนวทั้งหมด',
+				'edit_item'     => 'แก้ไขแนว',
+				'add_new_item'  => 'เพิ่มแนว',
+				'search_items'  => 'ค้นหาแนว',
+			),
+			'public'            => true,
+			'hierarchical'      => true,
+			'show_ui'           => true,
+			'show_in_rest'      => true,
+			'show_admin_column' => true,
+			'rewrite'           => array( 'slug' => 'genre' ),
+		)
+	);
 }
 add_action( 'init', 'popseries_register_taxonomies', 10 );
 
@@ -96,15 +118,43 @@ function popseries_taxonomy_seeds() {
 			'ซับอังกฤษ' => 'eng-sub',
 			'เสียงเกาหลี' => 'korean-audio',
 		),
+		'ps_genre'    => array(
+			'ดราม่า'        => 'drama',
+			'โรแมนติก'      => 'romance',
+			'คอมเมดี้'      => 'comedy',
+			'แอ็คชั่น'      => 'action',
+			'ระทึกขวัญ'     => 'thriller',
+			'สยองขวัญ'      => 'horror',
+			'อาชญากรรม'     => 'crime',
+			'สืบสวน'        => 'investigation',
+			'ลึกลับ'        => 'mystery',
+			'แฟนตาซี'       => 'fantasy',
+			'ไซไฟ'          => 'sci-fi',
+			'ย้อนยุค/พีเรียด' => 'historical',
+			'การแพทย์'      => 'medical',
+			'กฎหมาย'        => 'legal',
+			'โรงเรียน/วัยรุ่น' => 'teen',
+			'ครอบครัว'      => 'family',
+			'ชีวิต'         => 'slice-of-life',
+			'เมโลดราม่า'    => 'melodrama',
+			'การเมือง'      => 'politics',
+			'ธุรกิจ'        => 'business',
+		),
 	);
 }
 
 /**
- * Insert the default terms once (guarded by an option). Idempotent: existing
- * terms are skipped, so re-running never duplicates.
+ * Bump when seed terms change so an existing install re-runs the seeder.
+ */
+const POPSERIES_TAX_SEED_VERSION = 2;
+
+/**
+ * Insert the default terms once per seed version (guarded by an option).
+ * Idempotent: existing terms are skipped, so re-running never duplicates —
+ * bumping POPSERIES_TAX_SEED_VERSION just adds any new terms.
  */
 function popseries_seed_taxonomies() {
-	if ( get_option( 'popseries_tax_seeded' ) ) {
+	if ( (int) get_option( 'popseries_tax_seeded', 0 ) >= POPSERIES_TAX_SEED_VERSION ) {
 		return;
 	}
 	foreach ( popseries_taxonomy_seeds() as $taxonomy => $terms ) {
@@ -117,6 +167,6 @@ function popseries_seed_taxonomies() {
 			}
 		}
 	}
-	update_option( 'popseries_tax_seeded', 1 );
+	update_option( 'popseries_tax_seeded', POPSERIES_TAX_SEED_VERSION );
 }
 add_action( 'init', 'popseries_seed_taxonomies', 20 );
