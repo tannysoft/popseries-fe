@@ -60,6 +60,48 @@ add_filter( 'popseries_popular_post_ids', function ( $ids, $range, $limit, $excl
 }, 10, 4 );
 ```
 
+## จัดหน้าเว็บ (Slider / กำลังออนแอร์)
+
+หลัง activate จะมีเมนู **Pop Series** ใน WP Admin:
+
+- **สไลด์หน้าแรก** — ค้นหาโพสต์แล้วกด “เพิ่ม” จัดลำดับด้วย ▲▼ (เว้นว่าง = ใช้ 5 โพสต์ล่าสุด)
+- **กำลังออนแอร์** — เลือกซีรีส์ที่จะเด่นในหัวข้อ “กำลังออนแอร์” บนหน้า `/series`
+
+Endpoint ที่เพิ่ม: `GET /popseries/v1/slider` และ `GET /popseries/v1/on-air`
+(frontend เรียกผ่าน `getSliderPosts()` / `getOnAirPosts()`)
+
+## Clear cache Next.js อัตโนมัติ (On-demand Revalidation)
+
+frontend cache แบบ ISR (10 นาที) — เพื่อให้เห็นผลทันทีเมื่อแก้ข้อมูล ปลั๊กอินจะยิง webhook
+ไปที่ `/api/revalidate` ของ Next เพื่อเคลียร์แคชเฉพาะส่วนที่เปลี่ยน
+
+**ตั้งค่า (2 ฝั่งต้องตรงกัน):**
+
+1. ฝั่ง Next.js — ตั้ง env `REVALIDATE_SECRET` (ดู `.env.example`)
+   ```
+   REVALIDATE_SECRET=$(openssl rand -hex 32)
+   ```
+2. ฝั่ง WordPress — เมนู Pop Series → “การเชื่อมต่อ Next.js” กรอก
+   - **Webhook URL**: `https://<frontend>/api/revalidate`
+   - **Shared secret**: ค่าเดียวกับ `REVALIDATE_SECRET`
+
+   หรือกำหนดใน `wp-config.php` (ปลอดภัยกว่า จะ lock ช่องในหน้า admin):
+   ```php
+   define( 'POPSERIES_REVALIDATE_URL', 'https://popseries.co/api/revalidate' );
+   define( 'POPSERIES_REVALIDATE_SECRET', '…ค่าเดียวกับฝั่ง Next…' );
+   ```
+
+**ทริกเกอร์อัตโนมัติ:**
+
+| เหตุการณ์ | เคลียร์ tag | เคลียร์ path |
+|---|---|---|
+| บันทึก/แก้ไข/ลบโพสต์ | `wp:posts`, `wp:post:<slug>` | `/`, `/<slug>` |
+| เปลี่ยนสถานะ publish | `wp:posts` | `/` |
+| บันทึกสไลด์หน้าแรก | `wp:slider` | `/` |
+| บันทึกกำลังออนแอร์ | `wp:on-air` | `/series` |
+
+ทุก fetch ฝั่ง frontend ติด tag `wp` (master) เสมอ — ยิง webhook body `{"tags":["wp"]}` เพื่อล้างทั้งหมดได้
+
 ## Hooks ที่ปรับแต่งได้
 
 | Filter | ใช้ทำอะไร |
@@ -67,3 +109,4 @@ add_filter( 'popseries_popular_post_ids', function ( $ids, $range, $limit, $excl
 | `popseries_image_sizes` | กำหนดว่าจะส่งรูปขนาดไหนบ้างใน `media_details.sizes` |
 | `popseries_views_meta_key` | เปลี่ยน meta key ที่เก็บยอดวิวสำหรับ popular-posts |
 | `popseries_popular_post_ids` | ป้อนลำดับ post ID ของ popular-posts จากแหล่งภายนอก |
+| `popseries_series_category_id` | เปลี่ยน category id ของ Series (default 4) |

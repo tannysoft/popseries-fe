@@ -18,6 +18,7 @@ type Props = {
   currentPage: number;
   totalPages: number;
   totalCount: number;
+  onAir?: NormalizedPost[];
 };
 
 const dateFmt = new Intl.DateTimeFormat("th-TH", {
@@ -46,6 +47,7 @@ export function CategoryView({
   currentPage,
   totalPages,
   totalCount,
+  onAir = [],
 }: Props) {
   const accent = ACCENT_STYLES[category.accent];
   const isFirstPage = currentPage === 1;
@@ -106,7 +108,12 @@ export function CategoryView({
       </section>
 
       <section className="container-pop">
-        <CategoryLayout category={category} hero={hero} posts={rest} />
+        <CategoryLayout
+          category={category}
+          hero={hero}
+          posts={rest}
+          onAir={onAir}
+        />
 
         <Pagination
           currentPage={currentPage}
@@ -122,10 +129,12 @@ function CategoryLayout({
   category,
   hero,
   posts,
+  onAir,
 }: {
   category: CategoryMeta;
   hero: NormalizedPost | null;
   posts: NormalizedPost[];
+  onAir: NormalizedPost[];
 }) {
   if (!hero && posts.length === 0) {
     return (
@@ -148,7 +157,7 @@ function CategoryLayout({
       return <StarLayout hero={hero} posts={posts} />;
     case "series":
     default:
-      return <SeriesLayout hero={hero} posts={posts} />;
+      return <SeriesLayout hero={hero} posts={posts} onAir={onAir} />;
   }
 }
 
@@ -560,13 +569,18 @@ function ScoopLayout({
 function SeriesLayout({
   hero,
   posts,
+  onAir = [],
 }: {
   hero: NormalizedPost | null;
   posts: NormalizedPost[];
+  onAir?: NormalizedPost[];
 }) {
-  const nowStreaming = posts.slice(0, 5);
-  const topTen = posts.slice(5, 13);
-  const remaining = posts.slice(13);
+  // When editors curate "กำลังออนแอร์", use that list and free the paged posts
+  // (which no longer supply the streaming row) to fill the sections below.
+  const curated = onAir.length > 0;
+  const nowStreaming = curated ? onAir : posts.slice(0, 5);
+  const topTen = curated ? posts.slice(1, 9) : posts.slice(5, 13);
+  const remaining = curated ? posts.slice(9) : posts.slice(13);
 
   return (
     <>

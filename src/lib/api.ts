@@ -38,6 +38,23 @@ export type WPAuthor = {
   avatar_urls?: Record<string, string>;
 };
 
+// Subset of Yoast's `yoast_head_json` we consume for page metadata.
+export type YoastHead = {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  og_title?: string;
+  og_description?: string;
+  og_type?: string;
+  og_image?: { url: string; width?: number; height?: number }[];
+  article_published_time?: string;
+  article_modified_time?: string;
+  twitter_card?: string;
+  twitter_title?: string;
+  twitter_description?: string;
+  twitter_image?: string;
+};
+
 export type WPPost = {
   id: number;
   slug: string;
@@ -49,6 +66,7 @@ export type WPPost = {
   content: WPRendered;
   categories: number[];
   tags: number[];
+  yoast_head_json?: YoastHead;
   _embedded?: {
     author?: WPAuthor[];
     "wp:featuredmedia"?: WPMedia[];
@@ -70,6 +88,7 @@ export type NormalizedPost = {
   category: CategoryMeta | undefined;
   tags: WPTerm[];
   originalLink: string;
+  seo?: YoastHead;
 };
 
 type FetchOpts = {
@@ -95,7 +114,7 @@ export async function getAuthorBySlug(
   slug: string,
 ): Promise<NormalizedAuthor | null> {
   const q = buildQuery({ slug });
-  const users = await wp<WPAuthor[]>(`/users?${q}`);
+  const users = await wp<WPAuthor[]>(`/users?${q}`, { tags: ["wp:users"] });
   if (!users.length) return null;
   const u = users[0];
   return {
@@ -124,11 +143,20 @@ function buildQuery(params: Record<string, string | number | undefined | (string
   return usp.toString();
 }
 
-async function wp<T>(path: string, init?: RequestInit): Promise<T> {
+// Every WP fetch carries the master "wp" cache tag plus any resource-specific
+// tags, so the /api/revalidate webhook can clear exactly what changed.
+type WpInit = RequestInit & { tags?: string[] };
+
+function cacheTags(tags?: string[]): string[] {
+  return tags?.length ? ["wp", ...tags] : ["wp"];
+}
+
+async function wp<T>(path: string, init?: WpInit): Promise<T> {
+  const { tags, ...rest } = init ?? {};
   const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    next: { revalidate: REVALIDATE_SECONDS },
-    headers: { Accept: "application/json", ...(init?.headers || {}) },
+    ...rest,
+    next: { revalidate: REVALIDATE_SECONDS, tags: cacheTags(tags) },
+    headers: { Accept: "application/json", ...(rest.headers || {}) },
   });
   if (!res.ok) {
     throw new Error(`WP fetch failed: ${res.status} ${path}`);
@@ -138,12 +166,13 @@ async function wp<T>(path: string, init?: RequestInit): Promise<T> {
 
 async function wpWithHeaders<T>(
   path: string,
-  init?: RequestInit,
+  init?: WpInit,
 ): Promise<{ data: T; total: number; totalPages: number }> {
+  const { tags, ...rest } = init ?? {};
   const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    next: { revalidate: REVALIDATE_SECONDS },
-    headers: { Accept: "application/json", ...(init?.headers || {}) },
+    ...rest,
+    next: { revalidate: REVALIDATE_SECONDS, tags: cacheTags(tags) },
+    headers: { Accept: "application/json", ...(rest.headers || {}) },
   });
   if (!res.ok) {
     throw new Error(`WP fetch failed: ${res.status} ${path}`);
@@ -219,6 +248,7 @@ export function normalizePost(p: WPPost): NormalizedPost {
     category: p.categories.map((id) => CATEGORY_BY_ID.get(id)).find(Boolean),
     tags: pickTags(p),
     originalLink: p.link,
+    seo: p.yoast_head_json,
   };
 }
 
@@ -233,7 +263,10 @@ export async function getPosts(opts: FetchOpts & { categoryId?: number } = {}) {
     exclude: opts.exclude,
     search: opts.search,
   });
-  const posts = await wp<WPPost[]>(`/posts?${q}`, { signal: opts.signal });
+  const posts = await wp<WPPost[]>(`/posts?${q}`, {
+    signal: opts.signal,
+    tags: ["wp:posts"],
+  });
   return posts.map(normalizePost);
 }
 
@@ -255,14 +288,14 @@ export async function getPostsPaged(
   });
   const { data, total, totalPages } = await wpWithHeaders<WPPost[]>(
     `/posts?${q}`,
-    { signal: opts.signal },
+    { signal: opts.signal, tags: ["wp:posts"] },
   );
   return { posts: data.map(normalizePost), total, totalPages };
 }
 
 export async function getTagBySlug(slug: string): Promise<PopularTag | null> {
   const q = buildQuery({ slug });
-  const tags = await wp<PopularTag[]>(`/tags?${q}`);
+  const tags = await wp<PopularTag[]>(`/tags?${q}`, { tags: ["wp:tags"] });
   if (!tags.length) return null;
   const t = tags[0];
   return { ...t, name: decodeEntities(t.name) };
@@ -277,7 +310,7 @@ export type PopularTag = {
 
 export async function getPopularTags(limit = 18): Promise<PopularTag[]> {
   const q = buildQuery({ per_page: limit, orderby: "count", order: "desc" });
-  const tags = await wp<PopularTag[]>(`/tags?${q}`);
+  const tags = await wp<PopularTag[]>(`/tags?${q}`, { tags: ["wp:tags"] });
   return tags.map((t) => ({
     id: t.id,
     name: decodeEntities(t.name),
@@ -300,7 +333,7 @@ export async function getMostViewedPosts(
   });
   try {
     const res = await fetch(`${WPP_BASE}/popular-posts?${q}`, {
-      next: { revalidate: REVALIDATE_SECONDS },
+      next: { revalidate: REVALIDATE_SECONDS, tags: ["wp", "wp:posts"] },
       headers: { Accept: "application/json" },
     });
     if (!res.ok) return [];
@@ -313,7 +346,36 @@ export async function getMostViewedPosts(
 
 export async function getPostBySlug(slug: string): Promise<NormalizedPost | null> {
   const q = buildQuery({ slug, _embed: 1 });
-  const posts = await wp<WPPost[]>(`/posts?${q}`);
+  const posts = await wp<WPPost[]>(`/posts?${q}`, {
+    tags: ["wp:posts", `wp:post:${slug}`],
+  });
   if (!posts.length) return null;
   return normalizePost(posts[0]);
+}
+
+/**
+ * Editor-curated homepage hero slides (managed in the WP admin "Pop Series"
+ * page). Returns an empty array when nothing is curated; callers fall back to
+ * the latest posts. Never throws — a curation outage must not break the home page.
+ */
+export async function getSliderPosts(): Promise<NormalizedPost[]> {
+  try {
+    const posts = await wp<WPPost[]>(`/slider`, { tags: ["wp:slider"] });
+    return posts.map(normalizePost);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Editor-curated "กำลังออนแอร์" Series list, shown on the Series category page.
+ * Empty array when nothing is curated (caller keeps its automatic fallback).
+ */
+export async function getOnAirPosts(): Promise<NormalizedPost[]> {
+  try {
+    const posts = await wp<WPPost[]>(`/on-air`, { tags: ["wp:on-air"] });
+    return posts.map(normalizePost);
+  } catch {
+    return [];
+  }
 }

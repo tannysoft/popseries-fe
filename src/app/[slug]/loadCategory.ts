@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { CATEGORY_BY_SLUG, type CategoryMeta } from "@/lib/categories";
-import { getPostsPaged } from "@/lib/api";
+import { getPostsPaged, getOnAirPosts } from "@/lib/api";
 import type { NormalizedPost } from "@/lib/api";
 
 export const PAGE_SIZE = 18;
@@ -25,6 +25,8 @@ export type CategoryPageData = {
   currentPage: number;
   totalPages: number;
   totalCount: number;
+  // Editor-curated "กำลังออนแอร์" list (Series, first page only). Empty otherwise.
+  onAir: NormalizedPost[];
 };
 
 export async function loadCategoryPage(
@@ -52,12 +54,18 @@ export async function loadCategoryPage(
   const offset = isFirstPage
     ? undefined
     : firstPageTotal + (requestedPage - 2) * PAGE_SIZE;
-  const { posts, total, totalPages } = await getPostsPaged({
-    categoryId: cat.id,
-    perPage,
-    page: requestedPage,
-    offset,
-  });
+  // Curated On Air only headlines the Series landing (first) page.
+  const onAirPromise =
+    cat.key === "series" && isFirstPage ? getOnAirPosts() : Promise.resolve([]);
+  const [{ posts, total, totalPages }, onAir] = await Promise.all([
+    getPostsPaged({
+      categoryId: cat.id,
+      perPage,
+      page: requestedPage,
+      offset,
+    }),
+    onAirPromise,
+  ]);
 
   if (!posts.length && requestedPage > 1) notFound();
 
@@ -75,5 +83,6 @@ export async function loadCategoryPage(
     currentPage: requestedPage,
     totalPages: finalTotalPages,
     totalCount: total,
+    onAir,
   };
 }

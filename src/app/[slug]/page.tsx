@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CATEGORY_BY_SLUG } from "@/lib/categories";
 import { getPostBySlug } from "@/lib/api";
+import { ArticleSkeleton, CategorySkeleton } from "@/components/Skeleton";
 import { CategoryView } from "./CategoryView";
 import { ArticleView } from "./ArticleView";
 import { loadCategoryPage } from "./loadCategory";
@@ -25,16 +27,60 @@ export async function generateMetadata({
   }
   const post = await getPostBySlug(slug);
   if (!post) return {};
+
+  // Prefer Yoast SEO output when available, falling back to derived values.
+  const seo = post.seo;
+  const title = seo?.title || post.title;
+  const description = seo?.description || post.excerpt;
+  const ogImages = seo?.og_image?.length
+    ? seo.og_image.map((img) => ({
+        url: img.url,
+        width: img.width,
+        height: img.height,
+      }))
+    : post.image
+    ? [{ url: post.image.url }]
+    : [];
+  const twitterCards = ["summary", "summary_large_image", "player", "app"];
+  const twitterCard = (
+    twitterCards.includes(seo?.twitter_card ?? "")
+      ? seo?.twitter_card
+      : "summary_large_image"
+  ) as "summary" | "summary_large_image" | "player" | "app";
+
   return {
-    title: post.title,
-    description: post.excerpt,
+    title,
+    description,
+    alternates: seo?.canonical ? { canonical: seo.canonical } : undefined,
     openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      images: post.image ? [post.image.url] : [],
+      title: seo?.og_title || title,
+      description: seo?.og_description || description,
+      images: ogImages,
       type: "article",
+      publishedTime: seo?.article_published_time,
+      modifiedTime: seo?.article_modified_time,
+    },
+    twitter: {
+      card: twitterCard,
+      title: seo?.twitter_title || seo?.og_title || title,
+      description: seo?.twitter_description || seo?.og_description || description,
+      images: seo?.twitter_image
+        ? [seo.twitter_image]
+        : ogImages.map((i) => i.url),
     },
   };
+}
+
+async function CategoryContent({ slug }: { slug: string }) {
+  const data = await loadCategoryPage(slug, undefined);
+  if (!data) notFound();
+  return <CategoryView {...data} />;
+}
+
+async function ArticleContent({ slug }: { slug: string }) {
+  const post = await getPostBySlug(slug);
+  if (!post) notFound();
+  return <ArticleView post={post} />;
 }
 
 export default async function SlugPage({
@@ -44,13 +90,18 @@ export default async function SlugPage({
 }) {
   const { slug } = await params;
 
-  const categoryData = await loadCategoryPage(slug, undefined);
-  if (categoryData) {
-    return <CategoryView {...categoryData} />;
+  // Categories use fixed, known slugs — anything else is treated as an article.
+  if (CATEGORY_BY_SLUG.has(slug)) {
+    return (
+      <Suspense fallback={<CategorySkeleton slug={slug} />}>
+        <CategoryContent slug={slug} />
+      </Suspense>
+    );
   }
 
-  const post = await getPostBySlug(slug);
-  if (!post) notFound();
-
-  return <ArticleView post={post} />;
+  return (
+    <Suspense fallback={<ArticleSkeleton />}>
+      <ArticleContent slug={slug} />
+    </Suspense>
+  );
 }

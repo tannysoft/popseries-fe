@@ -199,7 +199,45 @@ function popseries_format_post( $post, $with_content = false ) {
 		$data['_embedded']['wp:featuredmedia'] = array( $featured );
 	}
 
+	// Yoast SEO head (og:*, twitter, canonical, description…) — only on single
+	// fetches, where the frontend builds page metadata. Keeps lists light.
+	if ( $with_content ) {
+		$yoast = popseries_yoast_head_json( $id );
+		if ( $yoast ) {
+			$data['yoast_head_json'] = $yoast;
+		}
+	}
+
 	return $data;
+}
+
+/**
+ * Yoast SEO's rendered head as structured JSON (the same shape Yoast adds to
+ * the stock REST API under `yoast_head_json`). Null when Yoast is inactive.
+ *
+ * @param int $post_id
+ * @return array|null
+ */
+function popseries_yoast_head_json( $post_id ) {
+	if ( ! function_exists( 'YoastSEO' ) ) {
+		return null;
+	}
+	try {
+		$meta = YoastSEO()->meta->for_post( $post_id );
+		if ( ! $meta ) {
+			return null;
+		}
+		$head = $meta->get_head();
+		if ( is_object( $head ) && isset( $head->json ) ) {
+			return $head->json;
+		}
+		if ( is_array( $head ) && isset( $head['json'] ) ) {
+			return $head['json'];
+		}
+	} catch ( \Throwable $e ) {
+		return null;
+	}
+	return null;
 }
 
 /**
@@ -376,8 +414,12 @@ function popseries_route_popular( WP_REST_Request $request ) {
 		);
 	}
 
-	// (1) External ranking source.
+	// (1) External ranking source (filter override), then the WordPress Popular
+	// Posts plugin if it is active.
 	$ranked_ids = apply_filters( 'popseries_popular_post_ids', null, $range, $limit, $exclude );
+	if ( null === $ranked_ids ) {
+		$ranked_ids = popseries_wpp_popular_ids( $range, $limit, $exclude );
+	}
 
 	if ( is_array( $ranked_ids ) ) {
 		if ( empty( $ranked_ids ) ) {
@@ -413,6 +455,56 @@ function popseries_route_popular( WP_REST_Request $request ) {
 	wp_reset_postdata();
 
 	return new WP_REST_Response( $items );
+}
+
+/**
+ * Ordered popular post IDs from the WordPress Popular Posts plugin, for a given
+ * range. Runs WPP's own REST route in-process (no outbound HTTP) so we inherit
+ * its real view counts, then reformat through WP_Query into our payload shape.
+ *
+ * @param string $range    last24hours | last7days | last30days | all
+ * @param int    $limit
+ * @param int[]  $exclude
+ * @return int[]|null  Null when WPP is inactive or has no data (caller falls back).
+ */
+function popseries_wpp_popular_ids( $range, $limit, $exclude ) {
+	if ( ! function_exists( 'rest_do_request' ) ) {
+		return null;
+	}
+	$routes = rest_get_server()->get_routes();
+	if ( ! isset( $routes['/wordpress-popular-posts/v1/popular-posts'] ) ) {
+		return null; // WPP not installed/active.
+	}
+
+	$exclude = (array) $exclude;
+	$request = new WP_REST_Request( 'GET', '/wordpress-popular-posts/v1/popular-posts' );
+	// Over-fetch to leave room for excluded IDs, then trim.
+	$request->set_query_params(
+		array(
+			'limit' => $limit + count( $exclude ),
+			'range' => $range,
+		)
+	);
+
+	$response = rest_do_request( $request );
+	if ( is_wp_error( $response ) || $response->is_error() ) {
+		return null;
+	}
+
+	$ids = array();
+	foreach ( (array) $response->get_data() as $item ) {
+		$id = 0;
+		if ( is_array( $item ) && isset( $item['id'] ) ) {
+			$id = (int) $item['id'];
+		} elseif ( is_object( $item ) && isset( $item->id ) ) {
+			$id = (int) $item->id;
+		}
+		if ( $id && ! in_array( $id, $exclude, true ) ) {
+			$ids[] = $id;
+		}
+	}
+
+	return $ids ? array_slice( $ids, 0, $limit ) : null;
 }
 
 /**
@@ -505,3 +597,16 @@ function popseries_register_routes() {
 	);
 }
 add_action( 'rest_api_init', 'popseries_register_routes' );
+
+/**
+ * Editorial curation: REST routes for the homepage Slider / Series On Air,
+ * plus the WP-admin picker page. Required after the helpers above so that
+ * popseries_format_post() is available to the curation module.
+ */
+require_once plugin_dir_path( __FILE__ ) . 'includes/curation.php';
+// Revalidation hooks must load everywhere (front, admin, cron) so save_post
+// and status transitions always ping the frontend.
+require_once plugin_dir_path( __FILE__ ) . 'includes/revalidate.php';
+if ( is_admin() ) {
+	require_once plugin_dir_path( __FILE__ ) . 'includes/admin.php';
+}

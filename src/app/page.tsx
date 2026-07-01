@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { ArticleCard } from "@/components/ArticleCard";
 import { SectionHeader } from "@/components/SectionHeader";
-import { getPosts, getPopularTags } from "@/lib/api";
+import {
+  getPosts,
+  getPopularTags,
+  getSliderPosts,
+  getMostViewedPosts,
+} from "@/lib/api";
 import { CATEGORIES, ACCENT_STYLES, type CategoryMeta } from "@/lib/categories";
 import { KeywordsSection } from "@/components/KeywordsSection";
 import { VideoSection } from "@/components/VideoSection";
@@ -10,21 +15,31 @@ import { HeroSlider } from "@/components/HeroSlider";
 export const revalidate = 600;
 
 async function loadHomeData() {
-  const [latest, popularTags, ...byCategory] = await Promise.all([
-    getPosts({ perPage: 14 }),
-    getPopularTags(22),
-    ...CATEGORIES.map((c) => getPosts({ perPage: 5, categoryId: c.id })),
-  ]);
+  const [latest, popularTags, slider, mostViewed, ...byCategory] =
+    await Promise.all([
+      getPosts({ perPage: 14 }),
+      getPopularTags(22),
+      getSliderPosts(),
+      getMostViewedPosts({ limit: 6, range: "last7days" }),
+      ...CATEGORIES.map((c) => getPosts({ perPage: 5, categoryId: c.id })),
+    ]);
   const sections = CATEGORIES.map((c, i) => ({ category: c, posts: byCategory[i] }));
-  return { latest, sections, popularTags };
+  return { latest, sections, popularTags, slider, mostViewed };
 }
 
 export default async function Home() {
-  const { latest, sections, popularTags } = await loadHomeData();
-  const heroSlides = latest.slice(0, 5);
+  const { latest, sections, popularTags, slider, mostViewed } =
+    await loadHomeData();
+  // Editor-curated slides take over when set; otherwise fall back to latest.
+  const heroSlides = slider.length ? slider : latest.slice(0, 5);
   const rest = latest.slice(5);
   const sidebar = rest.slice(0, 4);
-  const trending = rest.slice(4, 9);
+  // Real "most read" from WordPress Popular Posts; fall back to latest when WPP
+  // has no data. Drop any post already featured in the hero to avoid repeats.
+  const heroIds = new Set(heroSlides.map((p) => p.id));
+  const trending = (mostViewed.length ? mostViewed : rest.slice(4, 9))
+    .filter((p) => !heroIds.has(p.id))
+    .slice(0, 5);
   const videoPool = latest.slice(0, 7);
 
   const findSection = (key: CategoryMeta["key"]) =>
@@ -87,7 +102,7 @@ export default async function Home() {
           <SectionHeader
             eyebrow="Trending"
             title="กำลังเป็นที่พูดถึง"
-            description="คลิกอ่านมากที่สุดในวันนี้"
+            description="อ่านมากที่สุดในรอบสัปดาห์"
             accent="teal"
           />
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
